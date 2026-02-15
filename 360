@@ -1,68 +1,39 @@
-getgenv().rotationEnabled = false -- ★ ДОБАВЛЕНО: переменная для вращения
+local RunService = game:GetService("RunService")
+local lp = game:GetService("Players").LocalPlayer
+local rotationConnection = nil
+local rotationSpeed = 100000
 
-featureStates = featureStates or {}
-featureStates.Bhop = false
-featureStates.BhopHold = false
-
-local bhopConnection = nil
-local bhopLoaded = false
-local characterConnection = nil
-local frictionTables = {}
-local Character = nil
-local Humanoid = nil
-local HumanoidRootPart = nil
-local LastJump = 0
-local GROUND_CHECK_OFFSET = 3.5
-local GROUND_CHECK_RAY_LENGTH = 4
-local MAX_SLOPE_ANGLE = 45
-local bhopButtonScreenGui = nil
-local rotationConnection = nil -- ★ ДОБАВЛЕНО: соединение для вращения
-local rotationSpeed = 100000 -- ★ ДОБАВЛЕНО: скорость вращения (градусов в секунду)
-
--- ★ ДОБАВЛЕНО: Функция для вращения персонажа
 local function startRotation()
-    if rotationConnection then
-        rotationConnection:Disconnect()
-        rotationConnection = nil
-    end
+    if rotationConnection then rotationConnection:Disconnect() end
     
-    if not getgenv().rotationEnabled or not HumanoidRootPart then return end
-    
-    rotationConnection = RunService.Heartbeat:Connect(function(deltaTime)
-        if HumanoidRootPart and HumanoidRootPart.Parent then
-            -- Получаем текущее вращение
-            local currentRotation = HumanoidRootPart.Orientation
-            -- Изменяем только ось Y
-            local newRotation = Vector3.new(
-                currentRotation.X,
-                currentRotation.Y + (rotationSpeed * deltaTime),
-                currentRotation.Z
-            )
-            -- Применяем новое вращение
-            HumanoidRootPart.Orientation = newRotation
-        else
-            -- Останавливаем вращение если части больше нет
-            if rotationConnection then
-                rotationConnection:Disconnect()
-                rotationConnection = nil
+    rotationConnection = RunService.Heartbeat:Connect(function(dt)
+        local char = lp.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if hrp and getgenv().rotationEnabled then
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(rotationSpeed * dt), 0)
+        elseif not getgenv().rotationEnabled then
+            if rotationConnection then 
+                rotationConnection:Disconnect() 
+                rotationConnection = nil 
             end
         end
     end)
 end
 
--- ★ ДОБАВЛЕНО: Функция для остановки вращения
-local function stopRotation()
-    if rotationConnection then
-        rotationConnection:Disconnect()
-        rotationConnection = nil
+Tabs.Movement:AddToggle("SpinBot", {
+    Title = "Enable Rotation",
+    Default = false,
+    Callback = function(v)
+        getgenv().rotationEnabled = v
+        if v then
+            startRotation()
+        else
+            if rotationConnection then 
+                rotationConnection:Disconnect() 
+                rotationConnection = nil 
+            end
+        end
     end
-end
+})
 
--- ★ ДОБАВЛЕНО: Обновляем состояние вращения
-local function updateRotationState()
-    if getgenv().rotationEnabled and getgenv().autoJumpEnabled then
-        startRotation()
-    else
-        stopRotation()
-    end
-end
