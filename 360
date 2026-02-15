@@ -1,0 +1,72 @@
+RunService.Heartbeat:Connect(function()
+    if not Character or not Character:IsDescendantOf(workspace) then
+        Character = player.Character
+        if Character then
+            Humanoid = Character:FindFirstChildOfClass("Humanoid")
+            HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+            updateRotationState()
+        else
+            Humanoid = nil
+            HumanoidRootPart = nil
+            stopRotation()
+        end
+    end
+end)
+
+if characterConnection then
+    characterConnection:Disconnect()
+end
+
+characterConnection = player.CharacterAdded:Connect(function(character)
+    Character = character
+    task.wait(0.5)
+    Humanoid = character:WaitForChild("Humanoid")
+    HumanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    
+    setupJumpButton()
+    reapplyBhopOnRespawn()
+    updateRotationState()
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent then return end
+    
+    if input.KeyCode == Enum.KeyCode.Space and featureStates.BhopHold then
+        getgenv().bhopHoldActive = true
+        checkBhopState()
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Space then
+        getgenv().bhopHoldActive = false
+        checkBhopState()
+    end
+end)
+
+task.spawn(function()
+    task.wait(2)
+    if player.Character then
+        Character = player.Character
+        Humanoid = Character:FindFirstChildOfClass("Humanoid")
+        HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+    end
+    
+    setupJumpButton()
+    
+    if featureStates.Bhop then
+        checkBhopState()
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(leavingPlayer)
+    if leavingPlayer == player then
+        unloadBhop()
+        stopRotation()
+        
+        if characterConnection then
+            characterConnection:Disconnect()
+            characterConnection = nil
+        end
+    end
+end)
