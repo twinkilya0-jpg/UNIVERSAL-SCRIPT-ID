@@ -1,7 +1,7 @@
 local RunService = game:GetService("RunService")
 local lp = game:GetService("Players").LocalPlayer
 local rotationConnection = nil
-local rotationSpeed = 100000
+local rotationSpeed = 2900
 
 local function startRotation()
     if rotationConnection then rotationConnection:Disconnect() end
