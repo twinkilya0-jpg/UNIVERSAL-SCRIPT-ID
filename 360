@@ -1,4 +1,4 @@
-getgenv().rotationEnabled = false
+getgenv().rotationEnabled = false -- ★ ДОБАВЛЕНО: переменная для вращения
 
 featureStates = featureStates or {}
 featureStates.Bhop = false
@@ -16,9 +16,41 @@ local GROUND_CHECK_OFFSET = 3.5
 local GROUND_CHECK_RAY_LENGTH = 4
 local MAX_SLOPE_ANGLE = 45
 local bhopButtonScreenGui = nil
-local rotationConnection = nil
-local rotationSpeed = 100000
+local rotationConnection = nil -- ★ ДОБАВЛЕНО: соединение для вращения
+local rotationSpeed = 100000 -- ★ ДОБАВЛЕНО: скорость вращения (градусов в секунду)
 
+-- ★ ДОБАВЛЕНО: Функция для вращения персонажа
+local function startRotation()
+    if rotationConnection then
+        rotationConnection:Disconnect()
+        rotationConnection = nil
+    end
+    
+    if not getgenv().rotationEnabled or not HumanoidRootPart then return end
+    
+    rotationConnection = RunService.Heartbeat:Connect(function(deltaTime)
+        if HumanoidRootPart and HumanoidRootPart.Parent then
+            -- Получаем текущее вращение
+            local currentRotation = HumanoidRootPart.Orientation
+            -- Изменяем только ось Y
+            local newRotation = Vector3.new(
+                currentRotation.X,
+                currentRotation.Y + (rotationSpeed * deltaTime),
+                currentRotation.Z
+            )
+            -- Применяем новое вращение
+            HumanoidRootPart.Orientation = newRotation
+        else
+            -- Останавливаем вращение если части больше нет
+            if rotationConnection then
+                rotationConnection:Disconnect()
+                rotationConnection = nil
+            end
+        end
+    end)
+end
+
+-- ★ ДОБАВЛЕНО: Функция для остановки вращения
 local function stopRotation()
     if rotationConnection then
         rotationConnection:Disconnect()
@@ -26,44 +58,11 @@ local function stopRotation()
     end
 end
 
-local function startRotation()
-    stopRotation()
-    
-    if not getgenv().rotationEnabled or not HumanoidRootPart then return end
-    
-    rotationConnection = RunService.Heartbeat:Connect(function(deltaTime)
-        if HumanoidRootPart and HumanoidRootPart.Parent then
-            local currentRotation = HumanoidRootPart.Orientation
-            HumanoidRootPart.Orientation = Vector3.new(
-                currentRotation.X,
-                currentRotation.Y + (rotationSpeed * deltaTime),
-                currentRotation.Z
-            )
-        else
-            stopRotation()
-        end
-    end)
-end
-
+-- ★ ДОБАВЛЕНО: Обновляем состояние вращения
 local function updateRotationState()
-    if getgenv().rotationEnabled then
+    if getgenv().rotationEnabled and getgenv().autoJumpEnabled then
         startRotation()
     else
         stopRotation()
     end
 end
-
-local function createGradientButton(parent, position, size, text)
-    local button = Instance.new("Frame")
-    button.Name = "GradientBtn"
-    button.BackgroundTransparency = 0.7
-    button.Size = size
-    button.Position = position
-    button.Draggable = true
-    button.Active = true
-    button.Selectable = true
-    button.Parent = parent
-    return button
-end
-
-updateRotationState()
